@@ -1,0 +1,178 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+-- Check if the place ID is 8204899140
+if game.PlaceId == 8204899140 then
+    -- Auto-run the FF2 script if we're in the specified place
+    loadstring(game:HttpGet('https://pastebin.com/raw/11VEw2qB'))()
+else
+    -- Create ScreenGui
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    ScreenGui.IgnoreGuiInset = true
+
+    -- Create black background
+    local Background = Instance.new("Frame")
+    Background.Size = UDim2.new(1, 0, 1, 0)
+    Background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Background.BorderSizePixel = 0
+    Background.Parent = ScreenGui
+
+    -- Create title text
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Size = UDim2.new(0, 300, 0, 60)
+    TitleText.Position = UDim2.new(0.5, -150, -0.5, 0)  -- Start above screen
+    TitleText.BackgroundTransparency = 1
+    TitleText.TextColor3 = Color3.fromRGB(147, 112, 219)  -- Purple
+    TitleText.Text = "KUYUS hub is not affiliated with this script. Join discord.gg/othub"
+    TitleText.TextSize = 48
+    TitleText.Font = Enum.Font.GothamBold
+    TitleText.Parent = Background
+
+    -- Create particle effects
+    local ParticleEmitter = Instance.new("ParticleEmitter")
+    ParticleEmitter.Parent = TitleText
+    ParticleEmitter.Color = ColorSequence.new(Color3.fromRGB(147, 112, 219))
+    ParticleEmitter.Size = NumberSequence.new(0.2)
+    ParticleEmitter.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    ParticleEmitter.Lifetime = NumberRange.new(0.5, 1)
+    ParticleEmitter.Rate = 20
+    ParticleEmitter.Speed = NumberRange.new(5)
+    ParticleEmitter.SpreadAngle = Vector2.new(-180, 180)
+    ParticleEmitter.Enabled = false
+
+    -- Drop animation
+    local dropTween = TweenService:Create(TitleText, 
+        TweenInfo.new(1, Enum.EasingStyle.Bounce), 
+        {Position = UDim2.new(0.5, -150, 0.3, 0)}
+    )
+
+    -- Create click to continue text
+    local ContinueText = Instance.new("TextButton")
+    ContinueText.Size = UDim2.new(1, 0, 1, 0)
+    ContinueText.BackgroundTransparency = 1
+    ContinueText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ContinueText.Text = "Click anywhere to continue"
+    ContinueText.TextSize = 24
+    ContinueText.Font = Enum.Font.GothamSemibold
+    ContinueText.Parent = Background
+    ContinueText.Visible = false
+
+    -- Create game selection frame
+    local SelectionFrame = Instance.new("Frame")
+    SelectionFrame.Size = UDim2.new(0, 300, 0, 450)
+    SelectionFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+    SelectionFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SelectionFrame.BorderSizePixel = 0
+    SelectionFrame.Visible = false
+    SelectionFrame.Parent = Background
+
+    -- Add rounded corners
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = SelectionFrame
+
+    -- Function to create game buttons
+    local function createButton(text, position, loadstringFunc)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.9, 0, 0, 30)
+        button.Position = UDim2.new(0.05, 0, 0, position)
+        button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.Text = text
+        button.TextSize = 16
+        button.Font = Enum.Font.GothamSemibold
+        button.Parent = SelectionFrame
+        
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 6)
+        buttonCorner.Parent = button
+        
+        -- Hover effects
+        button.MouseEnter:Connect(function()
+            TweenService:Create(button, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            }):Play()
+        end)
+        
+        button.MouseLeave:Connect(function()
+            TweenService:Create(button, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            }):Play()
+        end)
+        
+        if loadstringFunc then
+            button.MouseButton1Click:Connect(function()
+                loadstringFunc()
+                ScreenGui:Destroy()
+            end)
+        end
+        
+        return button
+    end
+
+    -- Play intro sequence
+    dropTween:Play()
+    wait(1)
+    ParticleEmitter.Enabled = true
+    wait(1)
+    ContinueText.Visible = true
+
+    -- Handle continue click
+    ContinueText.MouseButton1Click:Connect(function()
+        TweenService:Create(TitleText, TweenInfo.new(0.5), {
+            Position = UDim2.new(0.5, -150, 0.1, 0),
+            TextSize = 36
+        }):Play()
+        
+        ContinueText.Visible = false
+        SelectionFrame.Visible = true
+        
+        -- Create all buttons individually
+        createButton("RH2", 20, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/zTfa3LzP'))()
+        end)
+        
+        createButton("HIGHSCHOOL HOOPS", 60, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/0YXrmwHV'))()
+        end)
+        
+        createButton("Basketball Stars 3", 98, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/5amJ0Ktw'))()
+        end)
+        
+        createButton("Basketball Legends", 136, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/gAbY4e4K'))()
+        end)
+        
+        createButton("Hoop Nation", 174, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/PDAyG5h3'))()
+
+        end)
+        
+        createButton("Hoopz", 212, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/0uGVvg1d'))()
+
+        end)
+        
+        createButton("blackhawk", 250, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/bZqSTQ3j'))()
+        end)
+        
+        createButton("ff2", 288, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/11VEw2qB'))()
+
+        end)
+        
+        createButton("Button 9", 326, function()
+            print("sigmerfacebitsari")
+        end)
+        
+        createButton("ALL FREE SCRIPTS", 364, function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/RZkzdbQn'))()
+        end)
+    end)
+end
