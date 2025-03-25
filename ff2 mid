@@ -1,0 +1,1302 @@
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Consistt/Ui/main/UnLeaked"))()
+
+
+library.rank = "Paid User"
+local Wm = library:Watermark("OT HUB FF2 | v" .. library.version ..  " | " .. library:GetUsername() .. " | rank: " .. library.rank)
+local FpsWm = Wm:AddWatermark("fps: " .. library.fps)
+coroutine.wrap(function()
+	while wait(.75) do
+		FpsWm:Text("fps: " .. library.fps)
+	end
+end)()
+
+
+local Notif = library:InitNotifications()
+
+for i = 20,0,-1 do 
+	task.wait(0.05)
+	local LoadingXSX = Notif:Notify("Loading OT HUB FF2, please be patient.", 3, "")
+end 
+
+library.title = "OT HUB FF2"
+
+library:Introduction()
+wait(1)
+local Init = library:Init()
+
+local LoadingXSX = Notif:Notify("TO SHOW AND UNSHOW UI IT IS LEFT ALT.", 5, "")
+
+local Tab1 = Init:NewTab("Catching")
+
+-- MAGNET FUNCTIONS --
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+local toggleenabled = false
+local distance = 0
+
+local function getCharacter()
+	return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+end
+
+local function getClosestFootball(character)
+	local closestFootball = nil
+	local closestDistance = distance
+
+	for _, obj in pairs(workspace:GetChildren()) do
+		if obj:IsA("BasePart") and obj.Name == "Football" then
+			local dist = (obj.Position - character.HumanoidRootPart.Position).Magnitude
+			if dist < closestDistance then
+				closestDistance = dist
+				closestFootball = obj
+			end
+		end
+	end
+
+	return closestFootball
+end
+
+local function catchFootball(football, catchRight)
+	if football and toggleenabled then
+		local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local tween = TweenService:Create(catchRight, tweenInfo, {Position = football.Position})
+		tween:Play()
+	end
+end
+
+RunService.Heartbeat:Connect(function()
+	local character = getCharacter()
+	local catchRight = character:FindFirstChild("CatchRight")
+
+	if catchRight and toggleenabled then
+		local closestFootball = getClosestFootball(character)
+		if closestFootball then
+			catchFootball(closestFootball, catchRight)
+		end
+	end
+end)
+
+-- MAGNET UI --
+
+local Section1 = Tab1:NewSection("Magnets")
+
+Tab1:NewToggle("Enable Magnets", false, function(value)
+	toggleenabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab1:NewSlider("Magnet Range", "", true, "/", {min = 0, max = 20, default = 0}, function(value)
+	distance = value
+end)
+
+-- CFI MAGNET FUNCTION -- 
+
+local UserInputService = game:GetService("UserInputService")
+local PlayerInstance = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local CharacterInstance = PlayerInstance.Character or PlayerInstance.CharacterAdded:Wait()
+local RootPartInstance = CharacterInstance:FindFirstChild("HumanoidRootPart")
+
+local MagnetAttachmentInstance
+local IsMagnetActive = false 
+local CustomMagnetRange = 0
+local CanActivateMagnetInstance = true
+
+task.spawn(function()
+	CharacterInstance.ChildRemoved:Connect(function(child)
+		if child.Name == "CatchRight" then
+			MagnetAttachmentInstance = nil
+		end
+	end)
+	CharacterInstance.ChildAdded:Connect(function(child)
+		if child.Name == "CatchRight" then
+			MagnetAttachmentInstance = child
+		end
+	end)
+end)
+
+PlayerInstance.CharacterAdded:Connect(function(newCharacter)
+	task.wait()
+	CharacterInstance = newCharacter
+	RootPartInstance = CharacterInstance:FindFirstChild("HumanoidRootPart")
+end)
+
+local function ExecuteMagnetInteractionInstance(targetPart, transmitter, toggle)
+	if IsMagnetActive and transmitter and targetPart then
+		if toggle == 1 then
+			local PullDirectionInstance = (targetPart.Position - transmitter.Position).Unit
+			local PullCalculationInstance = PullDirectionInstance + Vector3.new(1, 1, 1)
+			transmitter.CFrame = (targetPart.CFrame + PullCalculationInstance)
+		end
+	end
+end
+
+task.spawn(function()
+	MagnetAttachmentInstance = CharacterInstance:WaitForChild("CatchRight")
+	while task.wait() do
+		if IsMagnetActive and MagnetAttachmentInstance and RootPartInstance then
+			for _, objectInstance in next, workspace:GetChildren() do
+				if objectInstance:IsA("BasePart") and objectInstance.Name == "Football" then
+					local DistanceInstance = (RootPartInstance.Position - objectInstance.Position).Magnitude
+
+					if DistanceInstance <= CustomMagnetRange then
+						ExecuteMagnetInteractionInstance(MagnetAttachmentInstance, objectInstance, 1)
+						ExecuteMagnetInteractionInstance(MagnetAttachmentInstance, objectInstance, 1)
+						task.wait()
+						ExecuteMagnetInteractionInstance(MagnetAttachmentInstance, objectInstance, 0)
+						ExecuteMagnetInteractionInstance(MagnetAttachmentInstance, objectInstance, 0)
+					end
+				end
+			end
+		end
+	end
+end)
+
+-- CFI MAGNET UI --
+
+local Section1 = Tab1:NewSection("CFI Magnets")
+
+Tab1:NewToggle("Enable CFI Magnets", false, function(value)
+	IsMagnetActive = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab1:NewSlider("CFI Magnet Range", "", true, "/", {min = 0, max = 20, default = 0}, function(value)
+	CustomMagnetRange = value 
+end)	
+
+
+-- PULL VECTOR FUNCTIONALITY --
+
+local pullVector = false
+local pullVectorDistance = 0
+local pullMode = "press"  -- Change this to "hold" for hold mode or "press" for press mode
+local isClicking = false
+local pressCooldown = false
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and pullVector then
+		if pullMode == "press" and not pressCooldown then
+			pressCooldown = true
+			task.spawn(function()
+				local startTime = tick()
+				while tick() - startTime < 1.8 do
+					for _, v in workspace:GetChildren() do
+						if v.Name == "Football" and v:IsA("BasePart") and game:GetService("Players").LocalPlayer.Character then
+							local hrp = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+							if hrp then
+								local angle = (v.Position - hrp.Position).Unit
+								local distance = (v.Position - hrp.Position).Magnitude
+								if distance < pullVectorDistance then
+									hrp.Velocity = angle * pullVectorDistance
+								end
+							end
+						end
+					end
+					task.wait()
+				end
+				pressCooldown = false
+			end)
+		elseif pullMode == "hold" then
+			isClicking = true
+		end
+	end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if pullMode == "hold" then
+			isClicking = false
+		end
+	end
+end)
+
+task.spawn(function()
+	game:GetService("RunService").RenderStepped:Connect(function()
+		if pullVector then
+			if pullMode == "hold" and isClicking then
+				for _, v in workspace:GetChildren() do
+					if v.Name == "Football" and v:IsA("BasePart") and game:GetService("Players").LocalPlayer.Character then
+						local hrp = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+						if hrp then
+							local angle = (v.Position - hrp.Position).Unit
+							local distance = (v.Position - hrp.Position).Magnitude
+							if distance < pullVectorDistance then
+								hrp.Velocity = angle * pullVectorDistance
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+end)
+
+-- PULL VECTOR UI --
+
+local Section1 = Tab1:NewSection("Pull Vector")
+
+Tab1:NewToggle("Enable Pull Vector", false, function(value)
+	pullVector = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab1:NewSelector("Pull Vector Mode", "Press", {"Hold", "Press"}, function(d)
+	if d == "Hold" then
+		pullMode = "hold"
+	elseif d == "Press" then
+		pullMode = "press"
+	end
+end)
+
+Tab1:NewSlider("Pull Vector Range", "", true, "/", {min = 0, max = 30, default = 0}, function(value)
+	pullVectorDistance = value 
+end)	
+
+-- PLAYER TAB -- 
+
+local Tab2 = Init:NewTab("Player")
+
+-- JUMP POWER AND ANGLE ENHANCER FUNCTIONALITY --
+
+local player = game:GetService("Players").LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local jumpBoostAmount = 50
+local AngleEnhancerAmount = 50
+local jumpCooldownTime = 0.5
+local abouttoangle = false
+local EnableJP = false
+local EnableAE = false
+local shiftLockEnabled = false
+local shiftLockDisabledAfterEnable = false
+local angleEnhancerKey = Enum.KeyCode.E
+local keyCheckEnabled = false
+
+local function checkShiftLock()
+	local isShiftDown = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+	local isAngleEnhancerKeyDown = UserInputService:IsKeyDown(angleEnhancerKey)
+
+	if keyCheckEnabled then
+		return UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter and isShiftDown and isAngleEnhancerKeyDown
+	else
+		return UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter and isShiftDown
+	end
+end
+
+RunService.RenderStepped:Connect(function()
+	if checkShiftLock() then
+		if not shiftLockEnabled then
+			shiftLockEnabled = true
+		end
+		shiftLockDisabledAfterEnable = false
+	else
+		if shiftLockEnabled then
+			shiftLockDisabledAfterEnable = true
+		end
+	end
+end)
+
+humanoid.StateChanged:Connect(function(_, newState)
+	if newState == Enum.HumanoidStateType.Jumping then
+		if shiftLockEnabled and shiftLockDisabledAfterEnable then
+			if keyCheckEnabled and not UserInputService:IsKeyDown(angleEnhancerKey) then
+				shiftLockEnabled = false
+				shiftLockDisabledAfterEnable = false
+			elseif not keyCheckEnabled or (keyCheckEnabled and UserInputService:IsKeyDown(angleEnhancerKey)) then
+				if EnableAE then
+					local originalEnableedrr = EnableJP
+					EnableJP = false
+					abouttoangle = true
+					task.wait(0.01)
+					humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, AngleEnhancerAmount - 50, 0)
+					shiftLockEnabled = false
+					shiftLockDisabledAfterEnable = false
+					task.delay(jumpCooldownTime, function()
+						abouttoangle = false
+						EnableJP = originalEnableedrr
+					end)
+				end
+			end
+		elseif EnableJP and not abouttoangle then
+			task.wait(0.01)
+			humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, jumpBoostAmount - 50, 0)
+		end
+	end
+end)
+
+-- JUMP POWER AND ANGLE ENHANCER UI --
+
+local Section1 = Tab2:NewSection("Jump Power")
+
+Tab2:NewToggle("Enable Jump Power", false, function(value)
+	EnableJP = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab2:NewSlider("Jump Power Amount", "", true, "/", {min = 50, max = 70, default = 50}, function(value)
+	jumpBoostAmount = value 
+end)	
+
+local Section1 = Tab2:NewSection("Angle Enhancer")
+
+Tab2:NewToggle("Enable Angle Enhancer", false, function(value)
+	EnableAE = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab2:NewToggle("Enable Angle Enhancer KeyCheck", false, function(value)
+	keyCheckEnabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab2:NewKeybind("Angle Enhancer Key", Enum.KeyCode.E, function(key)
+	angleEnhancerKey = key
+end)
+
+Tab2:NewSlider("Angle Enhancer Amount", "", true, "/", {min = 50, max = 70, default = 50}, function(value)
+	AngleEnhancerAmount = value 
+end)
+
+
+-- INFINITE JUMP FUNCTIONALITY --
+
+local player = game:GetService("Players").LocalPlayer
+local userInputService = game:GetService("UserInputService")
+local jumpCooldown = 0.5
+local canJump = true
+
+getgenv().InfiniteJump = false
+
+local function checkCharacter()
+	if player.Character and player.Character:FindFirstChild("Humanoid") then
+		return player.Character
+	else
+		return nil
+	end
+end
+
+local function onJumpRequest()
+	if getgenv().InfiniteJump and canJump then
+		local character = checkCharacter()
+		if character then
+			local humanoid = character:FindFirstChild("Humanoid")
+			if humanoid then
+				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				canJump = false
+
+				wait(jumpCooldown)
+				canJump = true
+			end
+		end
+	end
+end
+
+userInputService.JumpRequest:Connect(onJumpRequest)
+
+player.CharacterAdded:Connect(function()
+	canJump = true
+end)
+
+-- INFINITE JUMP UI --
+
+local Section2 = Tab2:NewSection("Infinite Jump")
+
+Tab2:NewToggle("Enable Infinite Jump", false, function(value)
+	getgenv().InfiniteJump = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+-- LEG RESIZE FUNCTIONALITY --
+
+local LegResizeEnabled = false
+local LegResizeScale = 0
+local LegTransparency = 0
+
+local function resizeLegs(leftLeg, rightLeg)
+	if LegResizeEnabled then
+		leftLeg.Size = Vector3.new(leftLeg.Size.X, LegResizeScale, leftLeg.Size.Z)
+		rightLeg.Size = Vector3.new(rightLeg.Size.X, LegResizeScale, rightLeg.Size.Z)
+	else
+		leftLeg.Size = Vector3.new(leftLeg.Size.X, 2, leftLeg.Size.Z)
+		rightLeg.Size = Vector3.new(rightLeg.Size.X, 2, rightLeg.Size.Z)
+	end
+end
+
+local function onCharacterAdded(character)
+	local leftLeg = character:FindFirstChild("Left Leg")
+	local rightLeg = character:FindFirstChild("Right Leg")
+
+	if not leftLeg or not rightLeg then return end
+
+	leftLeg.Transparency = LegTransparency
+	leftLeg.CanCollide = false
+	rightLeg.Transparency = LegTransparency
+	rightLeg.CanCollide = false
+
+	resizeLegs(leftLeg, rightLeg)
+end
+
+if player and player.Character then
+	onCharacterAdded(player.Character)
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- LEG RESIZE UI --
+
+local Section1 = Tab2:NewSection("Leg Resize")
+
+Tab2:NewToggle("Enable Leg Resize", false, function(value)
+	LegResizeEnabled = value
+	if player.Character then
+		local leftLeg = player.Character:FindFirstChild("Left Leg")
+		local rightLeg = player.Character:FindFirstChild("Right Leg")
+		if leftLeg and rightLeg then
+			resizeLegs(leftLeg, rightLeg)
+		end
+	end
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab2:NewSlider("Leg Transparency", "", true, "/", {min = 0, max = 1, default = 0}, function(value)
+	LegTransparency = value
+	if player.Character then
+		local leftLeg = player.Character:FindFirstChild("Left Leg")
+		local rightLeg = player.Character:FindFirstChild("Right Leg")
+		if leftLeg and rightLeg then
+			leftLeg.Transparency = LegTransparency
+			rightLeg.Transparency = LegTransparency
+		end
+	end
+end)
+
+Tab2:NewSlider("Leg Length", "", true, "/", {min = 0, max = 40, default = 0}, function(value)
+	LegResizeScale = value
+	if player.Character then
+		local leftLeg = player.Character:FindFirstChild("Left Leg")
+		local rightLeg = player.Character:FindFirstChild("Right Leg")
+		if leftLeg and rightLeg then
+			resizeLegs(leftLeg, rightLeg)
+		end
+	end
+end)
+
+
+
+
+-- VISUALS TAB --
+
+local Tab4 = Init:NewTab("Visuals")
+
+-- BALL TRAIL FUNCTIONALITY --
+
+local grav = 28
+local BallTrailerEnb = false
+
+local function BallPosAtTime(initial_position, initial_velocity, gravity, t)
+	local predicted_position = initial_position + initial_velocity * t + 0.5 * Vector3.new(0, -gravity, 0) * t ^ 2
+	return predicted_position
+end
+
+local function createPartsAndBeams(x0, v0, airtime)
+	local parts = {}
+	local beams = {}
+	local attachments = {}
+	local lastAttachment = nil
+
+	for t = 0, airtime, 0.05 do
+		local POS = BallPosAtTime(x0, v0, grav, t)
+
+		local Part = Instance.new("Part")
+		Part.Parent = workspace
+		Part.Size = Vector3.new(2, 2, 2)
+		Part.Anchored = true
+		Part.Color = Color3.fromRGB(0, 147, 70)
+		Part.CanCollide = false
+		Part.Position = POS
+		Part.Rotation = Vector3.new(-90, 0, 90)
+		Part.Transparency = 1
+		table.insert(parts, Part)
+
+		local attachment = Instance.new("Attachment", Part)
+		table.insert(attachments, attachment)
+
+		if lastAttachment then
+			local beam = Instance.new("Beam")
+			beam.Parent = workspace
+			beam.Color = ColorSequence.new(Color3.fromRGB(2,117,244))
+			beam.Texture = "rbxassetid://18231379988"
+			beam.Attachment0 = lastAttachment
+			beam.Attachment1 = attachment
+			beam.Width0 = 1.5
+			beam.Width1 = 1.5
+			beam.Transparency = NumberSequence.new(1 - (t / airtime))
+			table.insert(beams, beam)
+		end
+
+		lastAttachment = attachment
+	end
+
+	return parts, beams
+end
+
+local function cleanupPartsAndBeams(parts, beams)
+	for _, Part in ipairs(parts) do
+		Part:Destroy()
+	end
+	for _, Beam in ipairs(beams) do
+		Beam:Destroy()
+	end
+end
+
+-- BALL TRAIL UI --
+
+local Section1 = Tab4:NewSection("Ball Trail")
+
+local BallTrail = Tab4:NewToggle("Enable Ball Trail", false, function(value)
+	BallTrailerEnb = value
+	if BallTrailerEnb then
+		workspace.ChildAdded:Connect(function(c)
+			if not BallTrailerEnb then return end
+
+			game:GetService("RunService").Stepped:Wait()
+
+			if c.Name ~= "Football" or c:IsA("Tool") then return end
+
+			local x0 = c.Position
+			local v0 = c.Velocity
+
+			local a = -0.5 * grav
+			local b = v0.Y
+			local c_pos = x0.Y
+			local discriminant = b^2 - 4 * a * c_pos
+
+			if discriminant < 0 then 
+				return 
+			end
+
+			local airtime = (-b - math.sqrt(discriminant)) / (2 * a)
+			local parts, beams = createPartsAndBeams(x0, v0, airtime)
+
+			c.Touched:Connect(function(hit)
+				if hit and hit.CanCollide then
+					cleanupPartsAndBeams(parts, beams)
+				end
+			end)
+
+			task.wait(airtime + 1.75)
+			if workspace:FindFirstChild(c.Name) then
+				cleanupPartsAndBeams(parts, beams)
+			end
+		end)
+	else
+		for _, part in ipairs(workspace:GetChildren()) do
+			if part:IsA("Part") and part.Color == Color3.fromRGB(0, 147, 70) then
+				part:Destroy()
+			end
+		end
+		for _, beam in ipairs(workspace:GetChildren()) do
+			if beam:IsA("Beam") then
+				beam:Destroy()
+			end
+		end
+	end
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+-- FOOTBALL TRACER FUNCTIONALITY --
+
+local TracersEnabled = false
+local camera = game.Workspace.CurrentCamera
+local runService = game:GetService("RunService")
+local footballTracers = {}
+
+local function removeTracerForFootball(football)
+	if footballTracers[football] then
+		footballTracers[football]:Remove()
+		footballTracers[football] = nil
+	end
+end
+
+local function createTracerForFootball(football)
+	if not TracersEnabled or not football:IsA("BasePart") then return end
+
+	local tracer = Drawing.new("Line")
+	tracer.Visible = false
+	tracer.Thickness = 2
+	tracer.Color = Color3.fromRGB(255, 255, 255)
+
+	footballTracers[football] = tracer
+
+	local connection
+	connection = runService.RenderStepped:Connect(function()
+		if not football.Parent then
+			removeTracerForFootball(football)
+			connection:Disconnect()
+		else
+			local partPosition, onScreen = camera:WorldToViewportPoint(football.Position)
+			tracer.Visible = onScreen
+			if onScreen then
+				tracer.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+				tracer.To = Vector2.new(partPosition.X, partPosition.Y)
+			end
+		end
+	end)
+end
+
+local function applyToAllFootballs()
+	if not TracersEnabled then
+		for football, tracer in pairs(footballTracers) do
+			removeTracerForFootball(football)
+		end
+		return
+	end
+
+	for _, obj in pairs(workspace:GetChildren()) do
+		if obj.Name == "Football" and obj:IsA("BasePart") and not footballTracers[obj] then
+			createTracerForFootball(obj)
+		end
+	end
+end
+
+local function updateTracersStatus()
+	if TracersEnabled then
+		applyToAllFootballs()
+	else
+		for football, tracer in pairs(footballTracers) do
+			removeTracerForFootball(football)
+		end
+	end
+end
+
+workspace.ChildAdded:Connect(function(child)
+	if child.Name == "Football" and child:IsA("BasePart") then
+		createTracerForFootball(child)
+	end
+end)
+
+workspace.ChildRemoved:Connect(function(child)
+	if child.Name == "Football" and child:IsA("BasePart") then
+		removeTracerForFootball(child)
+	end
+end)
+
+applyToAllFootballs()
+
+-- FOOTBALL TRACER UI --
+
+local Section1 = Tab4:NewSection("Football Tracer")
+
+Tab4:NewToggle("Enable Football Tracer", false, function(value)
+	TracersEnabled = value
+	updateTracersStatus()
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+-- FOOTBALL STUDS FUNCTIONALITY --
+
+local StudsEnabled = false
+local footballParts = {}
+
+local function createStudTagForPart(part)
+	if not StudsEnabled then return end
+
+	local studTag = Drawing.new("Text")
+	studTag.Visible = false
+	studTag.Size = 18
+	studTag.Color = Color3.fromRGB(255, 255, 255)
+	studTag.Center = true
+	studTag.Outline = true
+	studTag.OutlineColor = Color3.fromRGB(0, 0, 0)
+	footballParts[part] = studTag
+
+	local function updateStudTag()
+		if part:IsDescendantOf(game.Workspace) then
+			local partPosition, onScreen = camera:WorldToViewportPoint(part.Position)
+
+			if onScreen then
+				local distance = (camera.CFrame.Position - part.Position).magnitude
+				local distanceText = StudsEnabled and string.format("%d studs", math.floor(distance)) or ""
+
+				studTag.Position = Vector2.new(partPosition.X, partPosition.Y)
+				studTag.Text = distanceText
+				studTag.Visible = true
+			else
+				studTag.Visible = false
+			end
+		else
+			studTag.Visible = false
+		end
+	end
+
+	local connection
+	connection = game:GetService("RunService").RenderStepped:Connect(function()
+		updateStudTag()
+
+		if not part:IsDescendantOf(game.Workspace) then
+			studTag.Visible = false
+			connection:Disconnect()
+		end
+	end)
+end
+
+local function applyToAllFootballParts()
+	while true do
+		for _, part in pairs(game.Workspace:GetDescendants()) do
+			if part.Name == "Football" and part:IsA("BasePart") then
+				if not footballParts[part] then
+					createStudTagForPart(part)
+				end
+			end
+		end
+		task.wait(0.1)
+	end
+end
+
+spawn(applyToAllFootballParts)
+
+game.Workspace.DescendantAdded:Connect(function(descendant)
+	if descendant.Name == "Football" and descendant:IsA("BasePart") then
+		if not footballParts[descendant] then
+			createStudTagForPart(descendant)
+		end
+	end
+end)
+
+game.Workspace.DescendantRemoving:Connect(function(descendant)
+	if footballParts[descendant] then
+		footballParts[descendant].Visible = false
+		footballParts[descendant] = nil
+	end
+end)
+
+-- FOOTBALL STUDS UI --
+
+local Section1 = Tab4:NewSection("Football Studs")
+
+local TRacerForFootball = Tab4:NewToggle("Enable Football Studs", false, function(value)
+	StudsEnabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+-- FOOTBALL HIGHLIGHT FUNCTIONALITY --
+
+local highlightConnection
+local footballHighlights = false
+
+local function createHighlightForBall(ball)
+	local highlight = Instance.new("Highlight")
+	highlight.Adornee = ball
+	highlight.FillColor = Color3.fromRGB(2,117,244)
+	highlight.OutlineTransparency = 1
+	highlight.Name = "FootballHighlight"
+	highlight.Parent = workspace
+end
+
+local function removeHighlightForBall(ball)
+	local highlight = ball:FindFirstChild("FootballHighlight")
+	if highlight then
+		highlight:Destroy()
+	end
+end
+
+local function onChildAdded(child)
+	if child:IsA("BasePart") and child.Name == "Football" then
+		createHighlightForBall(child)
+	end
+end
+
+-- FOOTBALL HIGHLIGHT UI --
+
+local Section1 = Tab4:NewSection("Football Highlights")
+
+Tab4:NewToggle("Enable Football Highlights", false, function(value)
+	footballHighlights = value
+	if footballHighlights then
+		highlightConnection = Workspace.ChildAdded:Connect(onChildAdded)
+		for _, obj in ipairs(Workspace:GetChildren()) do
+			if obj:IsA("BasePart") and obj.Name == "Football" then
+				createHighlightForBall(obj)
+			end
+		end
+	else
+		if highlightConnection then
+			highlightConnection:Disconnect()
+			highlightConnection = nil
+		end
+		for _, obj in ipairs(Workspace:GetChildren()) do
+			if obj:IsA("BasePart") and obj.Name == "Football" then
+				removeHighlightForBall(obj)
+			end
+		end
+	end
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+
+
+-- AUTOMATICS TAB --
+
+local Tab5 = Init:NewTab("Automatics")
+
+-- AUTO CATCH FUNCTIONALITY --
+
+local autoCatchEnabled = false
+local autoCatchRadius = 0
+
+local player = game:GetService("Players").LocalPlayer
+local mouse = player:GetMouse()
+
+task.spawn(function()
+	while true do
+		task.wait()
+
+		if mouse.Target and mouse.Target:IsA("GuiObject") then
+			continue
+		end
+
+		local closestFootball = nil
+		local closestDistance = math.huge
+
+		for _, obj in pairs(workspace:GetChildren()) do
+			if obj.Name == "Football" and obj:IsA("BasePart") then
+				local distance = (player.Character.HumanoidRootPart.Position - obj.Position).Magnitude
+				if distance < closestDistance then
+					closestFootball = obj
+					closestDistance = distance
+				end
+			end
+		end
+
+		if not closestFootball then
+			continue
+		end
+
+		local character = player.Character or player.CharacterAdded:Wait()
+		local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+
+		if not humanoidRootPart then
+			continue
+		end
+
+		if closestDistance < autoCatchRadius and autoCatchEnabled then
+			mouse1click()
+		end
+	end
+end)
+
+-- AUTO CATCH UI --
+
+local Section1 = Tab5:NewSection("Auto Catch")
+
+Tab5:NewToggle("Enable Auto Catch", autoCatchEnabled, function(value)
+	autoCatchEnabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab5:NewSlider("Auto Catch Radius", "", true, "/", {min = 0, max = 25, default = 0}, function(value)
+	autoCatchRadius = value
+end)
+
+-- AUTO SWAT FUNCTIONALITY --
+
+local autoSwatEnabled = false
+local autoSwatRadius = 0
+
+local player = game:GetService("Players").LocalPlayer
+
+task.spawn(function()
+	while true do
+		task.wait()
+
+		local closestFootball = nil
+		local closestDistance = math.huge
+
+		for _, obj in pairs(workspace:GetChildren()) do
+			if obj.Name == "Football" and obj:IsA("BasePart") then
+				local distance = (player.Character.HumanoidRootPart.Position - obj.Position).Magnitude
+				if distance < closestDistance then
+					closestFootball = obj
+					closestDistance = distance
+				end
+			end
+		end
+
+		if not closestFootball then
+			continue
+		end
+
+		local character = player.Character or player.CharacterAdded:Wait()
+		local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+
+		if not humanoidRootPart then
+			continue
+		end
+
+		if closestDistance < autoSwatRadius and autoSwatEnabled then
+			keypress(0x52)
+			keyrelease(0x52)
+		end
+	end
+end)
+
+-- AUTO SWAT UI --
+
+local Section1 = Tab5:NewSection("Auto Swat")
+
+Tab5:NewToggle("Enable Auto Swat", autoSwatEnabled, function(value)
+	autoSwatEnabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab5:NewSlider("Auto Swat Radius", "", true, "/", {min = 0, max = 25, default = 0}, function(value)
+	autoSwatRadius = value
+end)
+
+
+
+-- NEW PERFECT KICK --
+
+local VIM = game:GetService("VirtualInputManager")
+local plrrrr = game:GetService("Players").LocalPlayer
+local charrrr = plrrrr.Character
+local kickerAimbotEnabled = false 
+
+plrrrr.CharacterAdded:Connect(function(character)
+	charrrr = character
+end)
+
+local function onKickerGuiAdded(child)
+	if not kickerAimbotEnabled then return end 
+
+	local hum = charrrr and charrrr:FindFirstChild("Humanoid")
+	if child.Name == "KickerGui" and charrrr and hum then
+		local cursor = child:FindFirstChild("Cursor", true)
+		local firstdone = false
+		local seconddone = false
+
+		VIM:SendMouseButtonEvent(0, 0, 0, true, nil, 0)
+		repeat
+			task.wait()
+		until cursor.Position.Y.Scale <= 0.03
+
+		VIM:SendMouseButtonEvent(0, 0, 0, true, nil, 0)
+		firstdone = true
+
+		if firstdone then
+			repeat
+				task.wait()
+			until cursor.Position.Y.Scale >= 0.89
+		end
+
+		VIM:SendMouseButtonEvent(0, 0, 0, true, nil, 0)
+		seconddone = true
+
+		if seconddone and firstdone then
+			VIM:SendMouseButtonEvent(0, 0, 0, true, nil, 0)
+			hum:MoveTo(game.Workspace["KickerBall"].Position)
+		end
+	end
+end
+
+game:GetService("Players").LocalPlayer.PlayerGui.ChildAdded:Connect(onKickerGuiAdded)
+
+-- NEW PERFECT KICK UI --
+
+local Section1 = Tab5:NewSection("Perfect Kick")
+
+Tab5:NewToggle("Enable Perfect Kick", false, function(value)
+	kickerAimbotEnabled = value 
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+-- AUTO CAPTAIN FUNCTIONALITY --
+
+local autoCaptainEnabled = false
+
+if game.PlaceId ~= 8206123457 then
+	local endCaptainLine = workspace:FindFirstChild("Models"):FindFirstChild("LockerRoomA"):FindFirstChild("FinishLine")
+	local plr = game:GetService("Players").LocalPlayer
+	local char = plr.Character or plr.CharacterAdded:Wait()
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local autoCapOffset = Vector3.new(2.1, 2.1, 2.1)
+
+	endCaptainLine:GetPropertyChangedSignal("Position"):Connect(function()
+		if autoCaptainEnabled then 
+			task.wait(0.13)
+			hrp.CFrame = endCaptainLine.CFrame + autoCapOffset
+			task.wait(0.25)
+			hrp.CFrame = endCaptainLine.CFrame + autoCapOffset
+			task.wait(0.25)
+			hrp.CFrame = endCaptainLine.CFrame + autoCapOffset
+			task.wait(0.25)
+			hrp.CFrame = endCaptainLine.CFrame + autoCapOffset
+			task.wait(0.25)
+			hrp.CFrame = endCaptainLine.CFrame + autoCapOffset
+			task.wait(0.25)
+			hrp.CFrame = endCaptainLine.CFrame + autoCapOffset
+			task.wait(0.25)
+			hrp.CFrame = endCaptainLine.CFrame + autoCapOffset
+		end
+	end)
+end
+
+-- AUTO CAPTAIN UI --
+
+local Section1 = Tab5:NewSection("Auto Captain")
+
+Tab5:NewToggle("Enable Auto Captain", false, function(value)
+	autoCaptainEnabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+
+
+-- MISC TAB --
+
+local Tab6 = Init:NewTab("Misc")
+
+-- CLICK TO TACKLE FUNCTIONALITY --
+
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local connection
+local isActive = false
+local ClickTackleAimbotMaxRange = 50
+
+function handleTeleport(state)
+	if state then
+		if not connection then
+			connection = LocalPlayer:GetMouse().Button1Down:Connect(function()
+				for _, v in pairs(workspace:GetDescendants()) do
+					if v.Name == "Football" and v:IsA("Tool") and v.Parent:FindFirstChild("HumanoidRootPart") then
+						local toolPosition = v.Parent.HumanoidRootPart.Position
+						local playerPosition = Character:FindFirstChild("HumanoidRootPart").Position
+						if (toolPosition - playerPosition).Magnitude <= ClickTackleAimbotMaxRange then
+							Character.HumanoidRootPart.CFrame = v.Parent.HumanoidRootPart.CFrame + Vector3.new(1, 1, 1)
+						end
+					end
+				end
+			end)
+		end
+	else
+		if connection then
+			connection:Disconnect()
+			connection = nil
+		end
+	end
+end
+
+-- CLICK TO TACKLE UI --
+
+local Section1 = Tab6:NewSection("Click To Tackle")
+
+Tab6:NewToggle("Enable Click To Tackle", false, function(value)
+	isActive = value
+	handleTeleport(isActive)
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab6:NewSlider("Click To Tackle Range", "", true, "/", {min = 0, max = 30, default = 0}, function(value)
+	ClickTackleAimbotMaxRange = value
+end)
+
+
+-- ANTI JAM FUNCTIONALITY --
+
+local isAntiJamEnabled = false
+local collisionUpdateThread
+
+local function updateCollisionState()
+	while true do
+		if isAntiJamEnabled then
+			local player = game:GetService("Players").LocalPlayer
+			local character = player.Character
+			if character and character:FindFirstChild("Head") and character.Head.CanCollide then
+				for _, otherPlayer in ipairs(game:GetService("Players"):GetPlayers()) do
+					if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("Head") then
+						pcall(function()
+							local torso = otherPlayer.Character:FindFirstChild("Torso")
+							if torso then
+								torso.CanCollide = false
+							end
+							otherPlayer.Character.Head.CanCollide = false
+						end)
+					end
+				end
+			end
+		else
+			local player = game:GetService("Players").LocalPlayer
+			local character = player.Character
+			if character and character:FindFirstChild("Head") and not character.Head.CanCollide then
+				pcall(function()
+					local torso = character:FindFirstChild("Torso")
+					if torso then
+						torso.CanCollide = true
+					end
+					character.Head.CanCollide = true
+				end)
+			end
+		end
+		task.wait(0.1)
+	end
+end
+
+collisionUpdateThread = task.spawn(updateCollisionState)
+
+-- ANTI JAM UI --
+
+local Section1 = Tab6:NewSection("Anti Jam")
+
+Tab6:NewToggle("Enable Anti Jam", false, function(value)
+	isAntiJamEnabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+-- ANTI BLOCK FUNCTIONALITY --
+
+local AntiBlock = false
+
+local function DestroyBlockEvent()
+	if AntiBlock then
+		local Torso = Character:FindFirstChild("Torso")
+		if Torso then
+			local ffmover = Torso:FindFirstChild("FFmover")
+			if ffmover then
+				ffmover:Destroy()
+			end
+		end
+	end
+end
+
+task.spawn(function()
+	while task.wait() do
+		DestroyBlockEvent()
+	end
+end)
+
+-- ANTI BLOCK UI --
+
+local Section1 = Tab6:NewSection("Anti Block")
+
+Tab6:NewToggle("Enable Anti Block", false, function(value)
+	AntiBlock = value
+	if AntiBlock then
+		DestroyBlockEvent()
+	end
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+
+
+-- QUICK TP FUNCTIONALITY --
+
+local quickTPBind = Enum.KeyCode.F
+local quickTPEnabled = false
+local quickTPSpeed = 0 
+
+local quickTPCooldown = os.clock()
+
+local function moveCharacterForward()
+	local character = player.Character
+	local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+	local humanoid = character and character:FindFirstChild("Humanoid")
+
+	if not quickTPEnabled then return end
+	if not character or not humanoidRootPart or not humanoid then return end
+	if (os.clock() - quickTPCooldown) < 0.2 then return end
+
+	local speed = quickTPSpeed
+	local forwardVector = humanoidRootPart.CFrame.LookVector
+
+	humanoidRootPart.CFrame = humanoidRootPart.CFrame + (forwardVector * speed)
+
+	quickTPCooldown = os.clock()
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == quickTPBind then
+		moveCharacterForward()
+	end
+end)
+
+-- QUICK TP UI --
+
+local Section1 = Tab6:NewSection("Quick TP")
+
+Tab6:NewToggle("Enable Quick TP", false, function(value)
+	quickTPEnabled = value
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+Tab6:NewSlider("Quick TP Speed", "", true, "/", {min = 0, max = 5, default = 0}, function(value)
+	quickTPSpeed = value 
+end)
+
+-- NO BALL TRAIL FUNCTIONALITY --
+
+local NoBallTrailEnabled = false
+
+local function updateTrailState()
+	for _, ball in ipairs(workspace:GetChildren()) do
+		if ball.Name == "Football" and ball:IsA("BasePart") then
+			local trail = ball:FindFirstChildWhichIsA("Trail")
+			if trail then
+				trail.Enabled = not NoBallTrailEnabled
+			end
+		end
+	end
+end
+
+workspace.ChildAdded:Connect(function(ball)
+	task.wait()
+	if ball.Name ~= "Football" then return end
+	if not ball:IsA("BasePart") then return end
+
+	if ball:FindFirstChildWhichIsA("Trail") then
+		ball:FindFirstChildWhichIsA("Trail").Enabled = not NoBallTrailEnabled
+	end
+end)
+
+-- NO BALL TRAIL UI --
+
+local Section1 = Tab6:NewSection("No Ball Trail")
+
+Tab6:NewToggle("Enable No Ball Trail", false, function(value)
+	NoBallTrailEnabled = value
+	updateTrailState()
+end):AddKeybind(Enum.KeyCode.RightControl)
+
+-- NO TEXTURES FUNCTIONALITY --
+
+local function removeTextures(object)
+	if object:IsA("Decal") or object:IsA("Texture") then
+		object:Destroy()
+	elseif object:IsA("MeshPart") then
+		object.TextureID = ""
+		object.Material = Enum.Material.SmoothPlastic
+	elseif object:IsA("BasePart") then
+		object.Material = Enum.Material.SmoothPlastic
+	end
+end
+
+local function removeTexturesFromDescendants(parent)
+	for _, descendant in ipairs(parent:GetDescendants()) do
+		removeTextures(descendant)
+	end
+end
+
+-- NO TEXTURES UI --
+
+local Section1 = Tab6:NewSection("No Textures")
+
+local Button1 = Tab6:NewButton("Enable No Textures ( UNREVERTABLE MUST REJOIN )", function()
+	removeTexturesFromDescendants(game)
+end)
+
+local CoreGui = game:GetService("CoreGui")
+
+local guis = {
+	CoreGui:FindFirstChild("watermark"),
+	CoreGui:FindFirstChild("screen")
+}
+
+local function toggleGuis()
+	for _, gui in pairs(guis) do
+		if gui then
+			gui.Enabled = not gui.Enabled
+		end
+	end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.KeyCode == Enum.KeyCode.LeftAlt then
+		toggleGuis()
+	end
+end)
